@@ -200,7 +200,9 @@ want every line green:
 
 **Post this output in the course channel before Session 1.** Blockers get fixed before the
 session, not during it. A `FAIL` you posted on Wednesday is a five-minute problem; the same
-`FAIL` discovered in the room is a lost session.
+`FAIL` discovered in the room is a lost session.  
+![alt text](image-1.png)
+![alt text](image.png)
 
 ## 8. Set a budget alert now, not later
 
