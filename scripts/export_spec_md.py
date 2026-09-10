@@ -131,7 +131,7 @@ def main() -> int:
         out += ["---", "", f"## {name}", "", f"*{origin}*", ""]
         out += sheet_to_markdown(wb[name])
 
-    OUTPUT.write_text("\n".join(out))
+    OUTPUT.write_text("\n".join(out), encoding="utf-8")
     print(f"wrote {OUTPUT.relative_to(ROOT)}  ({len(wb.sheetnames)} sheets)")
     return 0
 

@@ -2,6 +2,9 @@
 #   pip install pip-tools
 #   pip-compile --generate-hashes requirements.in -o requirements.txt
 # Commit both files. The lock file is what makes the build reproducible.
+# In this case I use those command instead because my WSL could not use pip install pip-tools
+# pip install uv
+# uv pip compile --generate-hashes requirements.in -o requirements.txt 
 scikit-learn==1.8.0
 pandas==3.0.2
 numpy==2.4.4
