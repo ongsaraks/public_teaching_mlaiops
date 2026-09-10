@@ -2,8 +2,6 @@
 # `make reproduce` is the one command a grader runs. Keep it working.
 
 SHELL := /bin/bash
-VENV ?= .venv
-PYTHON3 := $(VENV)/bin/python3
 IMAGE ?= itcs355-lab1
 TAG   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 PLATFORM ?= linux/amd64
@@ -16,31 +14,30 @@ help:
 	@grep -E "^[a-zA-Z_-]+:.*?## .*$$" $(MAKEFILE_LIST) | awk -F":.*?## " "{printf \"  %-20s %s\\n\", \$$1, \$$2}"
 
 setup: ## Install dependencies and print environment status
-	python3 -m venv --clear $(VENV)
-	$(PYTHON3) -m pip install --upgrade pip
-	$(PYTHON3) -m pip install -r requirements.txt
+	python -m pip install --upgrade pip
+	pip install -r requirements.txt
 	@echo "environment ok"
 
 cloud-check: ## Resolve the eight capability slots
-	$(PYTHON3) scripts/cloud_check.py
+	python scripts/cloud_check.py
 
 data: ## Generate the default dataset (deterministic)
-	$(PYTHON3) scripts/make_dataset.py --seed $(SEED)
+	python scripts/make_dataset.py --seed $(SEED)
 
 test: ## Run data contract and split property tests
-	$(PYTHON3) -m pytest -q tests/
+	pytest -q tests/
 
 portability-audit: ## Fail if provider strings leak into src/
-	$(PYTHON3) scripts/portability_audit.py
+	python scripts/portability_audit.py
 
 train: ## Train locally, outside the container
-	$(PYTHON3) -m src.train --seed $(SEED) --metrics-out reports/metrics.json
+	python -m src.train --seed $(SEED) --metrics-out reports/metrics.json
 
 image: ## Build the training image for linux/amd64
 	docker buildx build --platform $(PLATFORM) -t $(IMAGE):$(TAG) --load .
 
 image-push: image ## Push to CONTAINER_REGISTRY via your adapter
-	$(PYTHON3) -c "from src import config; from cloudlayer.factory import get_adapter; \
+	python -c "from src import config; from cloudlayer.factory import get_adapter; \
 	print(get_adapter(config.load()).push_image(\"$(IMAGE):$(TAG)\"))"
 
 reproduce: data image ## THE ONE COMMAND. Grader runs this.
@@ -51,10 +48,10 @@ reproduce: data image ## THE ONE COMMAND. Grader runs this.
 	  $(IMAGE):$(TAG) --seed $(SEED) --metrics-out /app/reports/metrics.json
 
 verify: ## Check the produced metric against the README claim
-	$(PYTHON3) scripts/verify_metric.py
+	python scripts/verify_metric.py
 
 teardown: ## Delete every resource tagged course=itcs355 for this lab
-	$(PYTHON3) -c "from src import config; from cloudlayer.factory import get_adapter; \
+	python -c "from src import config; from cloudlayer.factory import get_adapter; \
 	cfg=config.load(); print(get_adapter(cfg).teardown(cfg.tags(1)))"
 
 clean: ## Remove local artifacts
@@ -62,17 +59,17 @@ clean: ## Remove local artifacts
 
 # --- Lab 2 -------------------------------------------------------------------
 tune: ## Budgeted hyperparameter study (>=12 trials)
-	$(PYTHON3) -m src.tune --trials 12 --budget-thb 150
+	python -m src.tune --trials 12 --budget-thb 150
 
 compare: ## Rank runs by metric and by cost per point
-	$(PYTHON3) scripts/compare_runs.py --experiment itcs355-lab2
+	python scripts/compare_runs.py --experiment itcs355-lab2
 
 reload-check: ## Load the registered model by version and score rows
-	$(PYTHON3) scripts/reload_check.py --name $(MODEL_REGISTRY_NAME) --version $(VERSION)
+	python scripts/reload_check.py --name $(MODEL_REGISTRY_NAME) --version $(VERSION)
 
 # --- Lab 3 -------------------------------------------------------------------
 serve: ## Run the inference service locally on :8080
-	$(PYTHON3) scripts/export_model.py --out reports/model.joblib
+	python scripts/export_model.py --out reports/model.joblib
 	MODEL_PATH=reports/model.joblib MODEL_VERSION=local uvicorn service.app:app --port 8080
 
 serve-image: ## Build the serving image
@@ -86,26 +83,26 @@ loadtest: ## Load test at three concurrency levels
 
 # --- Lab 4 -------------------------------------------------------------------
 inject-drift: ## Shift a feature's distribution on purpose
-	$(PYTHON3) scripts/inject_drift.py --feature temp_c --mode shift --magnitude 6
+	python scripts/inject_drift.py --feature temp_c --mode shift --magnitude 6
 
 drift: ## Score drift against the reference window
-	$(PYTHON3) -m monitoring.drift --current data/current.csv
+	python -m monitoring.drift --current data/current.csv
 
 # --- Lab 5 -------------------------------------------------------------------
 pipeline: ## Compile pipeline/pipeline.yaml for your provider
-	$(PYTHON3) -c "from cloudlayer.pipelines import compile_for; from src import config; \
+	python -c "from cloudlayer.pipelines import compile_for; from src import config; \
 	compile_for(config.load().provider)"
 
 llm-eval: ## Run the LLM golden set against recorded responses (offline, free)
-	$(PYTHON3) scripts/llm_eval.py --out reports/llm_eval-baseline.json
+	python scripts/llm_eval.py --out reports/llm_eval-baseline.json
 
 llm-gate: ## Prove the gate fails on a degraded set — expected to exit non-zero
-	$(PYTHON3) scripts/llm_eval.py --out reports/llm_eval-baseline.json >/dev/null
-	$(PYTHON3) scripts/llm_eval.py --responses evals/fixtures/triage-regressed.jsonl \
+	python scripts/llm_eval.py --out reports/llm_eval-baseline.json >/dev/null
+	python scripts/llm_eval.py --responses evals/fixtures/triage-regressed.jsonl \
 	  --out reports/llm_eval.json --baseline reports/llm_eval-baseline.json
 
 cost: ## Build the cost report
-	$(PYTHON3) scripts/cost_report.py --estimate $(EST) --actual $(ACT) --rps $(RPS) --instance $(INSTANCE)
+	python scripts/cost_report.py --estimate $(EST) --actual $(ACT) --rps $(RPS) --instance $(INSTANCE)
 
 swap-check: ## Prove the portability seam against a second provider
-	$(PYTHON3) scripts/portability_swap_check.py --second-provider $(SECOND)
+	python scripts/portability_swap_check.py --second-provider $(SECOND)
