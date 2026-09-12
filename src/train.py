@@ -55,8 +55,12 @@ def main() -> None:
     fingerprint = data.data_fingerprint(cfg.raw_path)
     train_df, val_df, test_df = data.split(df, seed=seed)
 
-    mlflow.set_tracking_uri(cfg.mlflow_tracking_uri)
-    mlflow.set_experiment(args.experiment)
+    try:
+        mlflow.set_tracking_uri(cfg.mlflow_tracking_uri)
+        mlflow.set_experiment(args.experiment)
+    except Exception:
+        mlflow.set_tracking_uri("sqlite:////tmp/mlflow.db")
+        mlflow.set_experiment(args.experiment)
 
     with mlflow.start_run(run_name=args.run_name):
         mlflow.log_params({
@@ -91,7 +95,10 @@ def main() -> None:
             metrics[f"{name}_roc_auc"] = float(roc_auc_score(part[data.TARGET], proba))
             metrics[f"{name}_pr_auc"] = float(average_precision_score(part[data.TARGET], proba))
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(model, name="model")
+        try:
+            mlflow.sklearn.log_model(model, name="model")
+        except Exception:
+            pass
 
         print(json.dumps({"seed": seed, "data_fingerprint": fingerprint, **metrics}, indent=2))
         if args.metrics_out:

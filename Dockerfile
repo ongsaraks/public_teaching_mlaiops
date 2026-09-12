@@ -25,7 +25,7 @@ RUN pip install --prefix=/install --require-hashes -r requirements.txt
 FROM python@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea AS runtime
 
 # Non-root. A training container has no reason to run as root, and graders check.
-RUN useradd --create-home --uid 10001 runner
+RUN useradd --create-home --uid 1000 runner
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app
