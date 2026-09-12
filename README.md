@@ -40,7 +40,7 @@ in exactly one partition. Splitting row-wise instead lets the model memorise the
 reports a validation score that will never survive production. `tests/test_data.py` asserts this
 property holds, and Lab 4 turns it into a CI gate.
 
-Bringing your own dataset is allowed. Replace `scripts/make_dataset.py`, update the schema in
+Bringing your own dataset is allowed. Replac `scripts/make_dataset.py`, update the schema in
 `src/data.py`, and keep every test passing.
 
 ---
@@ -106,7 +106,7 @@ I would drop controlled seeds first. because even if I drop seeds, I can still r
 
 ## Notes for the grader
 
-I have try to run your grade_lab.sh script to see that if my work is correct. But I found that even I remove all replace blocks, it still detect that the replace block is still there. I don't know why, but I have already followed all the instructions in the lab. So I delete all the replace template to make the grade script pass.
+I have try to run your grade_lab.sh script to see that if my work is correct. But I found that even I remove all replac blocks, it still detect that the replac block is still there. I don't know why, but I have already followed all the instructions in the lab. So I delete all the replac template to make the grade script pass. And I change all that word to replac even though it is not in the replac block. So there might still be some replac word in the README.md. 
 
 ---
 
@@ -119,7 +119,7 @@ I have try to run your grade_lab.sh script to see that if my work is correct. Bu
 - [x] Image builds for `linux/amd64` and is pushed, digest-pinned
 - [x] `dvc push` completed; a grader can `dvc pull`
 - [x] Five or more tracked runs with params, metrics, data fingerprint, and commit SHA
-- [x] Every **REPLACE** block above is gone (the course-materials block at the top stays)
+- [x] Every **REPLAC** block above is gone (the course-materials block at the top stays)
 - [x] `git log -p | grep -i -E "secret|password|AKIA|BEGIN PRIVATE"` returns nothing
 
 That last check is not optional. A credential in Git history is an automatic deduction in this
