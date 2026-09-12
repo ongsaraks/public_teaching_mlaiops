@@ -6,6 +6,7 @@
 # pip install uv
 # uv pip compile --generate-hashes requirements.in -o requirements.txt 
 scikit-learn==1.8.0
+scipy==1.16.3
 pandas==3.0.2
 numpy==2.4.4
 mlflow==3.16.0
