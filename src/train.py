@@ -51,6 +51,11 @@ def main() -> None:
     cfg = config.load(strict=False)
     seed = seeds.set_all(args.seed)
 
+    if not cfg.raw_path.exists() and cfg.blob_uri:
+        from cloudlayer.factory import get_adapter
+        adapter = get_adapter(cfg)
+        adapter.download(f"{cfg.blob_uri}/data/raw/sensors.csv", str(cfg.raw_path))
+
     df = data.load_raw(cfg.raw_path)
     fingerprint = data.data_fingerprint(cfg.raw_path)
     train_df, val_df, test_df = data.split(df, seed=seed)

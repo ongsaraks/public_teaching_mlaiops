@@ -8,7 +8,7 @@ PLATFORM ?= linux/amd64
 SEED ?= 20260101
 
 .PHONY: help setup cloud-check data test portability-audit train image image-push reproduce verify clean teardown \
-        tune compare reload-check serve serve-image loadtest drift inject-drift pipeline cost swap-check llm-eval llm-gate
+        train-remote tune compare reload-check serve serve-image loadtest drift inject-drift pipeline cost swap-check llm-eval llm-gate
 
 help:
 	@grep -E "^[a-zA-Z_-]+:.*?## .*$$" $(MAKEFILE_LIST) | awk -F":.*?## " "{printf \"  %-20s %s\\n\", \$$1, \$$2}"
@@ -58,8 +58,17 @@ clean: ## Remove local artifacts
 	rm -rf mlruns mlartifacts mlflow.db reports/metrics.json .pytest_cache
 
 # --- Lab 2 -------------------------------------------------------------------
+
+train-remote: image-push ## Submit training to managed compute via adapter
+	python -c "from src import config; from cloudlayer.factory import get_adapter; \
+	cfg=config.load(); adapter=get_adapter(cfg); \
+	digest=adapter.push_image('$(IMAGE):$(TAG)'); \
+	job_id=adapter.submit_training(digest, {'seed': $(SEED), 'n_estimators': 200, 'max_depth': 8}); \
+	print(f'Submitted training job: {job_id}'); \
+	print(adapter.wait_training(job_id))"
+	
 tune: ## Budgeted hyperparameter study (>=12 trials)
-	python -m src.tune --trials 12 --budget-thb 150
+	python -m src.tune --trials 12 --budget-thb 150 --instance e2-standard-4
 
 compare: ## Rank runs by metric and by cost per point
 	python scripts/compare_runs.py --experiment itcs355-lab2

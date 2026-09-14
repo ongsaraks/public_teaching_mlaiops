@@ -5,8 +5,6 @@
 > renders on GitHub, diagrams included. New to the repo? Start with the
 > [portability reference](course/reference/cloud-portability-reference.md).
 > Keep this block when you edit the rest of this file; it is not part of the Lab 1 deliverable.
->
-> **Labs:** [Lab 1 Report](README_Lab1.md) · [Lab 2 Report (Tracking & Registry)](README_Lab2.md)
 
 Predicting machine failure within 7 days from sensor readings. The model is not the point;
 whether a stranger can reproduce it is.
@@ -117,7 +115,7 @@ I have try to run your grade_lab.sh script to see that if my work is correct. Bu
 - [x] `make reproduce` works from a fresh clone, on a machine that is not yours
 - [x] `make verify` passes against your claim line
 - [x] `make test` — all tests pass
-- [x] `make portability-audit` — clean
+- [x] `make portability-audit` — clean  
 - [x] Image builds for `linux/amd64` and is pushed, digest-pinned
 - [x] `dvc push` completed; a grader can `dvc pull`
 - [x] Five or more tracked runs with params, metrics, data fingerprint, and commit SHA
@@ -126,3 +124,55 @@ I have try to run your grade_lab.sh script to see that if my work is correct. Bu
 
 That last check is not optional. A credential in Git history is an automatic deduction in this
 course, and rotating it is your responsibility, not the grader's.
+
+Note : mlflow ui --backend-store-uri sqlite:///mlflow.db 
+
+📋 Part 1: Section B — Evidence Questions (1.5 Marks)
+These questions check if you built the lab yourself by asking for specific metrics and values from your repo.
+
+Before the drill, make sure you know (or write down from your repository):
+
+Evidence Question	What to know	How to check in your repo
+1. Data Fingerprint (DVC Hash)	The exact MD5 hash of your raw dataset file.	Run cat data/raw.dvc (look for md5: ...)
+2. Hyperparameter & 5 Runs	Which hyperparameter you varied across your 5 MLflow runs, what range of values you used, and what happened to test_roc_auc.	Check your MLflow UI / mlruns or run a quick script against mlflow.db. (e.g., Varied n_estimators from 50 to 250; metric improved from ~0.82 to ~0.848)
+3. Reproducibility Trade-off	Which pinning mechanism you would drop first under time pressure, and your 1-sentence justification.	Check line 103 in your 
+
+README.md
+. (Your current answer: Dropping seeds first because code + input data still runs, whereas missing dependency hashes or image digests breaks builds)
+4. Expected Metric & Tolerance	The target metric and tolerance window stated in your README.	Line 24 in your 
+
+README.md
+: test_roc_auc: 0.8480 ± 0.0100
+🧠 Part 2: Section A — Concept Questions (1.5 Marks)
+Short, direct technical questions covering Session 1 & Lab 1 concepts.
+
+1. Container Layering & Build Optimization
+Q: Why is COPY requirements.txt placed before COPY src/ in the Dockerfile?
+Answer: Docker caches build layers. Source code changes frequently, but dependencies change rarely. Placing requirements.txt and pip install first ensures pip install runs only when dependencies change, drastically speeding up container rebuilds.
+Q: Why use a Multi-Stage build (AS builder vs AS runtime)?
+Answer: It separates build-time dependencies (compilers, build headers) from the execution environment, producing a significantly smaller and more secure production container image.
+Q: Why run as a non-root user (USER runner)?
+Answer: Security (principle of least privilege). Containers running as root expose the host system to privilege escalation risks if an exploit occurs.
+2. Environment & Dependency Pinning
+Q: What is the difference between image tag pinning (python:3.11-slim) and digest pinning (python@sha256:...)?
+Answer: Image tags are mutable (the base image maintainer can push changes or security updates under the same tag). Digests are immutable cryptographic hashes of the image layers, guaranteeing 100% reproducible base environments.
+Q: What does pip install --require-hashes do?
+Answer: It validates package checksums against the locked hashes in requirements.txt. If a dependency package binary is modified or silently re-published, the build fails immediately rather than installing modified code.
+3. Data Leakage & Grouped Splits
+Q: Why must sensor data split by machine_id (GroupKFold / grouped split) rather than a simple random row split?
+Answer: Sensor readings from the same physical machine share persistent characteristics. A random row split leaks readings from machine $X$ into both train and test sets, causing the model to memorize machine IDs rather than general failure patterns (artificially inflating validation metrics that fail in production).
+4. ML Technical Debt (Sculley et al. 2015)
+Q: Why do ML systems accumulate technical debt faster than traditional software systems?
+Answer: Because ML systems depend heavily on data in addition to code. Changes in data distribution, hidden feedback loops, pipeline complexity, and un-versioned artifacts create debt outside standard code boundaries.
+
+ 1. --n-estimators
+ "We are testing how many trees are required for the ensemble to converge to a stable ROC-AUC score, and finding the sweet spot where adding more trees no longer improves performance."
+
+ 2. --max-depth
+"We are testing the feature complexity required to capture machine failure patterns without memorizing noise in the training data."
+
+ 3. --min-samples-leaf
+ "We are testing how strongly we need to regularize the decision boundaries to prevent individual noisy sensor readings from triggering false positive failure alerts."
+
+ 4. --seed
+ "We vary the seed across identical model structures to measure the natural metric variance caused by different machine partition splits. This allows us to establish an honest tolerance range (e.g., ± 0.010) for make verify."

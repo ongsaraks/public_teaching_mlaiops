@@ -31,6 +31,7 @@ SEARCH_SPACE: dict[str, list] = {
     "n_estimators": [100, 300],
     "max_depth": [4, 8, 12],
     "min_samples_leaf": [1, 5],
+    "max_features": ["sqrt", 0.5],
 }
 
 
