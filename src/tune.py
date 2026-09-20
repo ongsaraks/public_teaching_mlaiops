@@ -116,7 +116,7 @@ def main() -> None:
                 "data_fingerprint": fingerprint,
                 "lab": "2",
             })
-            mlflow.sklearn.log_model(model, name="model")
+            mlflow.sklearn.log_model(model, name="model", serialization_format="cloudpickle")
 
         state["completed"].append(key)
         save_checkpoint(args.checkpoint, state)

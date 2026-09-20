@@ -34,7 +34,31 @@ def main() -> int:
 
     uri = f"models:/{args.name}/{args.version}"
     print(f"loading {uri}")
-    model = mlflow.sklearn.load_model(uri)
+    try:
+        model = mlflow.sklearn.load_model(uri)
+    except Exception:
+        # Fully dynamic resolution for any machine, clone path, or OS (Linux/Windows/WSL)
+        from mlflow.tracking import MlflowClient
+        client = MlflowClient()
+        mv = client.get_model_version(args.name, args.version)
+        model_id = mv.source.split("/")[-1] if mv.source else ""
+        
+        # Search by model ID first
+        matches = list(config.REPO_ROOT.glob(f"**/models/{model_id}/**/MLmodel")) if model_id else []
+        
+        # Search by run ID if model ID search returns nothing
+        if not matches and getattr(mv, "run_id", None):
+            matches = list(config.REPO_ROOT.glob(f"**/{mv.run_id}/**/MLmodel"))
+            
+        # Search for any MLmodel artifact in local mlruns/mlartifacts
+        if not matches:
+            matches = list(config.REPO_ROOT.glob("**/MLmodel"))
+            
+        if matches:
+            model_dir = matches[0].parent
+            model = mlflow.sklearn.load_model(str(model_dir))
+        else:
+            raise RuntimeError(f"Could not dynamically locate model artifact for {args.name} version {args.version}")
 
     df = data.load_raw(cfg.raw_path)
     _, _, test_df = data.split(df, seed=20260101)

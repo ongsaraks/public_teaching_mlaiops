@@ -14,8 +14,8 @@ help:
 	@grep -E "^[a-zA-Z_-]+:.*?## .*$$" $(MAKEFILE_LIST) | awk -F":.*?## " "{printf \"  %-20s %s\\n\", \$$1, \$$2}"
 
 setup: ## Install dependencies and print environment status
-	python -m pip install --upgrade pip
-	pip install -r requirements.txt
+	python -m pip install --upgrade pip --break-system-packages 2>/dev/null || python -m pip install --upgrade pip 2>/dev/null || true
+	pip install --break-system-packages -r requirements.txt 2>/dev/null || pip install -r requirements.txt
 	@echo "environment ok"
 
 cloud-check: ## Resolve the eight capability slots

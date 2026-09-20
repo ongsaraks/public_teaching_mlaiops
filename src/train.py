@@ -101,7 +101,7 @@ def main() -> None:
             metrics[f"{name}_pr_auc"] = float(average_precision_score(part[data.TARGET], proba))
         mlflow.log_metrics(metrics)
         try:
-            mlflow.sklearn.log_model(model, name="model")
+            mlflow.sklearn.log_model(model, name="model", serialization_format="cloudpickle")
         except Exception:
             pass
 

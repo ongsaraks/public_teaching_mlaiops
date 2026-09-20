@@ -139,8 +139,8 @@ class GcpAdapter(CloudAdapter):
             else:
                 cmd_args.extend([f"--{flag}", str(v)])
 
-        # Use identity_ref if it is a service account, otherwise let Vertex AI use default
-        sa = self.cfg.identity_ref if ("@" in self.cfg.identity_ref and not self.cfg.identity_ref.startswith("user:")) else None
+        # Use identity_ref if it is a GCP service account (*.gserviceaccount.com), otherwise let Vertex AI use default
+        sa = self.cfg.identity_ref if self.cfg.identity_ref.endswith(".gserviceaccount.com") else None
 
         job = aiplatform.CustomJob(
             display_name=f"itcs355-train-{self.cfg.project_id}",
