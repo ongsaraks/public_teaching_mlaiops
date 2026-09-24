@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import datetime
-import json
 import random
 import time
 
@@ -34,7 +33,6 @@ def main():
         time.sleep(0.015)
         now = datetime.datetime.now()
         is_v1 = random.random() < 0.90
-        version = "1" if is_v1 else "2"
 
         # Model v2 produces slightly higher false alarm probabilities / higher variance
         if is_v1:
