@@ -2,6 +2,7 @@
 # `make reproduce` is the one command a grader runs. Keep it working.
 
 SHELL := /bin/bash
+export PATH := $(HOME)/.local/bin:$(PATH)
 IMAGE ?= itcs355-lab1
 TAG   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 PLATFORM ?= linux/amd64
