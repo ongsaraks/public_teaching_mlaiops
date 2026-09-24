@@ -89,7 +89,7 @@ serve-image: ## Build the serving image
 
 ENDPOINT ?= itcs355-ep
 
-deploy: ## Deploy the serving image to managed endpoint via adapter
+deploy: serve-image ## Deploy the serving image to managed endpoint via adapter
 	python -c "from src import config; from cloudlayer.factory import get_adapter; \
 	cfg=config.load(); adapter=get_adapter(cfg); \
 	digest=adapter.push_image('itcs355-serve:$(TAG)'); \
