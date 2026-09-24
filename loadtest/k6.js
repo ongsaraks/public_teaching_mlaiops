@@ -18,8 +18,7 @@ export const options = {
   vus: Number(__ENV.VUS || 10),
   duration: __ENV.DURATION || '60s',
   thresholds: {
-    // TODO(Lab 3): set YOUR p95 target here, BEFORE you measure.
-    // A target chosen after seeing the numbers is not a target, and this is graded.
+    // Stated latency target before measuring: p95 < 200ms, failure rate < 1%
     'predict_latency_ms': ['p(95)<200'],
     'predict_failures': ['rate<0.01'],
   },

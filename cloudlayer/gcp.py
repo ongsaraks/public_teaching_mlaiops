@@ -207,7 +207,92 @@ class GcpAdapter(CloudAdapter):
         mv = mlflow.register_model(model_uri=model_uri, name=name)
         return str(mv.version)
 
-    # deploy / invoke                   -> Lab 3 (Vertex Endpoint)
+    def deploy(self, model_ref: str, endpoint: str, instance: str) -> str:
+        """Deploy a containerized model to a Vertex AI Endpoint."""
+        # pyrefly: ignore [missing-import]
+        from google.cloud import aiplatform
+
+        aiplatform.init(
+            project=self.cfg.project_id,
+            location=self.cfg.region,
+        )
+
+        model_version = getattr(self.cfg, "model_version", "1")
+        model = aiplatform.Model.upload(
+            display_name=f"itcs355-{endpoint}",
+            serving_container_image_uri=model_ref,
+            serving_container_predict_route="/predict",
+            serving_container_health_route="/ready",
+            serving_container_ports=[8080],
+            serving_container_environment_variables={
+                "MODEL_REGISTRY_NAME": self.cfg.model_registry_name,
+                "MODEL_VERSION": str(model_version),
+                "MLFLOW_TRACKING_URI": self.cfg.mlflow_tracking_uri,
+            },
+            labels=self.cfg.tags(3),
+        )
+
+        endpoints = aiplatform.Endpoint.list(
+            filter=f'display_name="{endpoint}"',
+            project=self.cfg.project_id,
+            location=self.cfg.region,
+        )
+        if endpoints:
+            ep = endpoints[0]
+        else:
+            ep = aiplatform.Endpoint.create(
+                display_name=endpoint,
+                project=self.cfg.project_id,
+                location=self.cfg.region,
+                labels=self.cfg.tags(3),
+            )
+
+        model.deploy(
+            endpoint=ep,
+            deployed_model_display_name=f"dep-{endpoint}",
+            machine_type=instance,
+            min_replica_count=1,
+            max_replica_count=1,
+            traffic_percentage=100,
+        )
+        return ep.resource_name
+
+    def invoke(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Invoke a Vertex AI endpoint via raw_predict."""
+        import json
+        # pyrefly: ignore [missing-import]
+        from google.cloud import aiplatform
+
+        aiplatform.init(project=self.cfg.project_id, location=self.cfg.region)
+        ep = aiplatform.Endpoint(endpoint_name=endpoint)
+        resp = ep.raw_predict(
+            body=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        return json.loads(resp.text)
+
+    def teardown(self, tags: dict[str, str]) -> list[str]:
+        """Delete every resource carrying these tags."""
+        # pyrefly: ignore [missing-import]
+        from google.cloud import aiplatform
+
+        aiplatform.init(project=self.cfg.project_id, location=self.cfg.region)
+        deleted = []
+        try:
+            endpoints = aiplatform.Endpoint.list(project=self.cfg.project_id, location=self.cfg.region)
+            for ep in endpoints:
+                match = all(ep.labels.get(k) == v for k, v in tags.items() if hasattr(ep, "labels") and ep.labels)
+                if match:
+                    ep_name = ep.display_name
+                    try:
+                        ep.undeploy_all()
+                        ep.delete(force=True)
+                        deleted.append(f"endpoint:{ep_name}")
+                    except Exception as exc:
+                        print(f"Error deleting endpoint {ep_name}: {exc}")
+        except Exception as exc:
+            print(f"Error listing endpoints for teardown: {exc}")
+        return deleted
+
     # emit_metric                       -> Lab 4 (Cloud Monitoring time series)
     # generate                          -> Lab 5 (managed LLM endpoint; read usageMetadata for tokens)
-    # teardown                          -> Lab 5 (filter resources by label)

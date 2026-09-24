@@ -84,6 +84,15 @@ serve: ## Run the inference service locally on :8080
 serve-image: ## Build the serving image
 	docker buildx build --platform $(PLATFORM) -f service/Dockerfile.serve -t itcs355-serve:$(TAG) --load .
 
+deploy: ## Deploy the serving image to managed endpoint via adapter
+	python -c "from src import config; from cloudlayer.factory import get_adapter; \
+	cfg=config.load(); adapter=get_adapter(cfg); \
+	digest=adapter.push_image('itcs355-serve:$(TAG)'); \
+	print(adapter.deploy(digest, 'itcs355-ep', 'e2-standard-4'))"
+
+smoke: ## Smoke test the endpoint with three known payloads
+	python scripts/smoke_test.py --target $(TARGET)
+
 loadtest: ## Load test at three concurrency levels
 	@for vus in 1 10 50; do \
 	  echo "=== $$vus VUs ==="; \
