@@ -289,8 +289,9 @@ class GcpAdapter(CloudAdapter):
         try:
             endpoints = aiplatform.Endpoint.list(project=self.cfg.project_id, location=self.cfg.region)
             for ep in endpoints:
-                match = all(ep.labels.get(k) == v for k, v in tags.items() if hasattr(ep, "labels") and ep.labels)
-                if match:
+                course_tag = tags.get("course", "itcs355")
+                match = (hasattr(ep, "labels") and ep.labels and ep.labels.get("course") == course_tag)
+                if match or ep.display_name.startswith("itcs355"):
                     ep_name = ep.display_name
                     try:
                         ep.undeploy_all()
