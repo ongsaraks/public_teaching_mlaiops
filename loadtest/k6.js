@@ -34,7 +34,9 @@ const payload = JSON.stringify({
 });
 
 export default function () {
-  const res = http.post(__ENV.TARGET, payload, {
+  const target = __ENV.TARGET || 'http://localhost:8080';
+  const url = target.endsWith('/predict') ? target : `${target.replace(/\/+$/, '')}/predict`;
+  const res = http.post(url, payload, {
     headers: { 'Content-Type': 'application/json' },
   });
   latency.add(res.timings.duration);
@@ -42,6 +44,6 @@ export default function () {
   check(res, {
     'status is 200': (r) => r.status === 200,
     'probability present': (r) => r.status === 200 && r.json('probability') !== undefined,
-    'version reported': (r) => r.headers['X-Model-Version'] !== undefined,
+    'version reported': (r) => r.headers['X-Model-Version'] !== undefined || r.headers['x-model-version'] !== undefined,
   });
 }
