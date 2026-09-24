@@ -264,7 +264,15 @@ class GcpAdapter(CloudAdapter):
         from google.cloud import aiplatform
 
         aiplatform.init(project=self.cfg.project_id, location=self.cfg.region)
-        ep = aiplatform.Endpoint(endpoint_name=endpoint)
+        if not endpoint.isdigit() and not endpoint.startswith("projects/"):
+            eps = aiplatform.Endpoint.list(
+                filter=f'display_name="{endpoint}"',
+                project=self.cfg.project_id,
+                location=self.cfg.region,
+            )
+            ep = eps[0] if eps else aiplatform.Endpoint(endpoint_name=endpoint)
+        else:
+            ep = aiplatform.Endpoint(endpoint_name=endpoint)
         resp = ep.raw_predict(
             body=json.dumps(payload).encode("utf-8"),
             headers={"Content-Type": "application/json"},
