@@ -296,3 +296,4 @@ class GcpAdapter(CloudAdapter):
 
     # emit_metric                       -> Lab 4 (Cloud Monitoring time series)
     # generate                          -> Lab 5 (managed LLM endpoint; read usageMetadata for tokens)
+    # teardown                          -> Lab 5 (filter resources by label)
