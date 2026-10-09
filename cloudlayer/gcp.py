@@ -303,6 +303,35 @@ class GcpAdapter(CloudAdapter):
             print(f"Error listing endpoints for teardown: {exc}")
         return deleted
 
-    # emit_metric                       -> Lab 4 (Cloud Monitoring time series)
+    def emit_metric(self, name: str, value: float, unit: str = "None") -> None:
+        """Emit a custom metric time series to GCP Cloud Monitoring."""
+        import time
+        # pyrefly: ignore [missing-import]
+        from google.cloud import monitoring_v3
+
+        client = monitoring_v3.MetricServiceClient()
+        project_name = f"projects/{self.cfg.project_id}"
+
+        series = monitoring_v3.TimeSeries()
+        series.metric.type = f"custom.googleapis.com/{name.replace('.', '/')}"
+        series.resource.type = "global"
+        series.resource.labels["project_id"] = self.cfg.project_id
+
+        now = time.time()
+        seconds = int(now)
+        nanos = int((now - seconds) * 10**9)
+        interval = monitoring_v3.TimeInterval(
+            end_time={"seconds": seconds, "nanos": nanos}
+        )
+        point = monitoring_v3.Point(
+            interval=interval,
+            value={"double_value": float(value)},
+        )
+        series.points = [point]
+        try:
+            client.create_time_series(name=project_name, time_series=[series])
+        except Exception as exc:
+            print(f"Warning: emit_metric failed for {name}: {exc}")
+
     # generate                          -> Lab 5 (managed LLM endpoint; read usageMetadata for tokens)
     # teardown                          -> Lab 5 (filter resources by label)

@@ -7,26 +7,29 @@ service: itcs355-predict
 
 objectives:
   - name: availability
-    target: 0.995              # TODO(Lab 4): your number, and defend it
+    target: 0.995              # 99.5% availability: 3.6h allowed downtime per 30d for predictive maintenance
     window: 30d
     measurement: "successful responses / total responses, excluding 4xx"
     on_budget_exhausted: |
-      TODO(Lab 4): what actually happens. Freeze deploys? Page someone? Fall back to the
-      last known-good version? Accept it and revise the target? All are defensible;
-      silence is not.
+      Freeze non-emergency deployments to staging and production. Page on-call MLOps
+      engineer via PagerDuty/Slack. If error spike correlates with a recent release,
+      automatically roll back to the previous stable container image. Require an RCA
+      post-mortem before resuming feature releases.
 
   - name: latency
-    target_p95_ms: 200         # TODO(Lab 4): must match the target you set in loadtest/k6.js
+    target_p95_ms: 200         # Matches p95 < 200ms threshold in loadtest/k6.js
     window: 7d
     measurement: "p95 of /predict, measured at the endpoint, not at the client"
     on_budget_exhausted: |
-      TODO(Lab 4)
+      Trigger P2 latency alert. Verify endpoint CPU/memory utilization. If resource-bound,
+      scale up min_replica_count or upgrade instance machine type. If algorithmic, profile
+      model inference and block promotion of models exceeding latency budget in CI.
 
   - name: freshness
     target_max_model_age_days: 30
     window: continuous
     measurement: "days since the production model version was trained"
     on_budget_exhausted: |
-      TODO(Lab 4): this one interacts with your retraining trigger in Lab 5. Keep them
-      consistent — an SLO demanding a 30-day-old model and a 90-day retrain schedule is
-      a contradiction you should notice here rather than in production.
+      Trigger automated retraining pipeline job on the latest verified window of sensor data.
+      Run evaluation gate against current champion; notify ML Lead for promotion sign-off.
+      If upstream training data is unavailable or failing validation, escalate to Data Platform team.
