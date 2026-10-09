@@ -20,16 +20,29 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment: staging
+    env:
+      CLOUD_PROVIDER: gcp
+      PROJECT_ID: itcs355-6688093
+      REGION: ${{ vars.REGION || 'asia-southeast1' }}
+      BLOB_URI: gs://itcs355-6688093/itcs355
+      CONTAINER_REGISTRY: ${{ vars.CONTAINER_REGISTRY || 'asia-southeast1-docker.pkg.dev/itcs355-6688093/itcs355' }}
+      MLFLOW_TRACKING_URI: sqlite:///mlflow.db
+      MODEL_REGISTRY_NAME: itcs355-6688093
+      IDENTITY_REF: 202808877645-compute@developer.gserviceaccount.com
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: google-github-actions/auth@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        if: ${{ secrets.GCP_WIF_PROVIDER != '' || secrets.GCP_SA_KEY != '' }}
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_DEPLOY_SA }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Configure Docker for GCP Artifact Registry
-        run: gcloud auth configure-docker ${{ vars.REGION }}-docker.pkg.dev
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
       - uses: actions/setup-python@v5
         with:
@@ -40,6 +53,13 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Build serving image
+        run: |
+          python scripts/make_dataset.py
+          python -m src.train --metrics-out reports/metrics.json
+          python scripts/export_model.py --out reports/model.joblib
+          docker buildx build --platform linux/amd64 -f service/Dockerfile.serve -t itcs355-serve:${{ github.sha }} --load .
 
       - name: Push image
         run: |
