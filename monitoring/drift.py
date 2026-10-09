@@ -20,9 +20,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-# Conventional PSI reading, and it IS only conventional — it comes from credit scoring,
-# where features are stable and volumes are large. Your problem may warrant something
-# tighter or looser. TODO(Lab 4): state your threshold and why, in your README.
+# Conventional PSI reading (credit scoring baseline adapted for industrial telemetry).
+# Thresholds justified in README_Lab4.md: 0.10 for stable, 0.25 for alert.
 PSI_NO_CHANGE = 0.10
 PSI_MODERATE = 0.25
 
