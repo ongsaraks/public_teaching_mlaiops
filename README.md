@@ -6,7 +6,7 @@
 > [portability reference](course/reference/cloud-portability-reference.md).
 > Keep this block when you edit the rest of this file; it is not part of the Lab 1 deliverable.
 >
-> **Labs:** [Lab 1 Report](README_Lab1.md) · [Lab 2 Report (Tracking & Registry)](README_Lab2.md)
+> **Labs:** [Lab 1 Report](README_Lab1.md) · [Lab 2 Report](README_Lab2.md) · [Lab 4 Report](README_Lab4.md) · [Lab 5 Report](README_Lab5.md)
 
 Predicting machine failure within 7 days from sensor readings. The model is not the point;
 whether a stranger can reproduce it is.
