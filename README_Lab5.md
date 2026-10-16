@@ -162,13 +162,6 @@ Below is the verified screenshot showing that running `make teardown` on the clo
 
 ![Teardown empty resource list](image-3.png)
 
-```bash
-python scripts/teardown_verify.py --lab 5
-# Output:
-# searching for resources tagged {'course': 'itcs355', 'student': 'itcs355-6688093', 'lab': '5'}
-# PASS  nothing found under these tags
-```
-
 All Vertex AI endpoints, test VMs, and training instances carrying `course=itcs355` have been deleted to guarantee zero idle billing.
 
 ---
