@@ -248,20 +248,20 @@ the arithmetic is the easy part.
 
 ## Deliverables checklist
 
-- [ ] Managed pipeline running the full path with a real evaluation gate
-- [ ] Three scoped identities, documented, with evidence of what broke when you removed a permission
-- [ ] Scheduled retraining plus the three-strategy comparison filled in for your system
-- [ ] `make portability-audit` returning zero provider strings in `src/`
-- [ ] Second provider's `upload`, `download`, and `invoke` implemented and demonstrated
-- [ ] Half-page portability write-up including an honest verdict
-- [ ] `reports/lab5-cost.md` with all six sections
-- [ ] One applied optimisation with before and after figures
-- [ ] Teardown verified, screenshot submitted
-- [ ] Total term spend under 800 THB
-- [ ] Golden set of 10+ cases in `evals/golden/`, including grounding, guardrail, injection, and insufficient-input cases
-- [ ] A recorded baseline, and a gate run against a changed prompt or model showing what moved
-- [ ] One guardrail failure demonstrated on demand, with the case added to the golden set
-- [ ] Three token-cost figures with working shown, and the one-paragraph budget defence
+- [x] Managed pipeline running the full path with a real evaluation gate
+- [x] Three scoped identities, documented, with evidence of what broke when you removed a permission
+- [x] Scheduled retraining plus the three-strategy comparison filled in for your system
+- [x] `make portability-audit` returning zero provider strings in `src/`
+- [x] Second provider's `upload`, `download`, and `invoke` implemented and demonstrated
+- [x] Half-page portability write-up including an honest verdict
+- [x] `reports/lab5-cost.md` with all six sections
+- [x] One applied optimisation with before and after figures
+- [x] Teardown verified, screenshot submitted
+- [x] Total term spend under 800 THB
+- [x] Golden set of 10+ cases in `evals/golden/`, including grounding, guardrail, injection, and insufficient-input cases
+- [x] A recorded baseline, and a gate run against a changed prompt or model showing what moved
+- [x] One guardrail failure demonstrated on demand, with the case added to the golden set
+- [x] Three token-cost figures with working shown, and the one-paragraph budget defence
 
 ## Acceptance criteria
 
