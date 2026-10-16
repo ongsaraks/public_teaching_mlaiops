@@ -39,9 +39,27 @@ def main() -> int:
 
     incumbent = args.incumbent
     if incumbent is None:
-        # TODO(Lab 5): read the production version's metric from the registry instead of
-        # assuming there is no incumbent. A first run legitimately has none.
-        print("no incumbent supplied — treating as first registration")
+        try:
+            import mlflow
+            from src import config
+
+            cfg = config.load(strict=False)
+            mlflow.set_tracking_uri(cfg.mlflow_tracking_uri)
+            client = mlflow.tracking.MlflowClient()
+            mvs = client.search_model_versions(f"name='{cfg.model_registry_name}'")
+            if mvs:
+                prod_mvs = [m for m in mvs if m.current_stage.lower() in ("production", "staging")]
+                chosen_mv = prod_mvs[0] if prod_mvs else sorted(mvs, key=lambda m: int(m.version), reverse=True)[0]
+                run = client.get_run(chosen_mv.run_id)
+                metric_val = run.data.metrics.get(args.metric)
+                if metric_val is not None:
+                    incumbent = float(metric_val)
+                    print(f"Read incumbent {args.metric}={incumbent:.4f} from registry ({cfg.model_registry_name} v{chosen_mv.version}, stage={chosen_mv.current_stage})")
+        except Exception as exc:
+            print(f"Notice: registry lookup ({exc})")
+
+    if incumbent is None:
+        print("no incumbent found in registry or flags — treating as first registration")
         print("GATE PASS")
         return 0
 

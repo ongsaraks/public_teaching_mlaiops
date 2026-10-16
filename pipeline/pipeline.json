@@ -1,0 +1,251 @@
+{
+  "pipelineSpec": {
+    "pipelineInfo": {
+      "name": "itcs355-training-pipeline",
+      "description": "ITCS355 Lab 5 Pipeline for itcs355-training-pipeline"
+    },
+    "root": {
+      "dag": {
+        "tasks": {
+          "ingest": {
+            "taskInfo": {
+              "name": "ingest"
+            },
+            "componentRef": {
+              "name": "comp-ingest"
+            }
+          },
+          "validate": {
+            "taskInfo": {
+              "name": "validate"
+            },
+            "componentRef": {
+              "name": "comp-validate"
+            },
+            "dependentTasks": [
+              "ingest"
+            ]
+          },
+          "train": {
+            "taskInfo": {
+              "name": "train"
+            },
+            "componentRef": {
+              "name": "comp-train"
+            },
+            "dependentTasks": [
+              "validate"
+            ]
+          },
+          "evaluate": {
+            "taskInfo": {
+              "name": "evaluate"
+            },
+            "componentRef": {
+              "name": "comp-evaluate"
+            },
+            "dependentTasks": [
+              "train"
+            ]
+          },
+          "register": {
+            "taskInfo": {
+              "name": "register"
+            },
+            "componentRef": {
+              "name": "comp-register"
+            },
+            "dependentTasks": [
+              "evaluate"
+            ],
+            "triggerPolicy": {
+              "condition": "gate_decision == 'pass'",
+              "strategy": "ALL_UPSTREAM_TASKS_COMPLETED"
+            }
+          },
+          "deploy_staging": {
+            "taskInfo": {
+              "name": "deploy_staging"
+            },
+            "componentRef": {
+              "name": "comp-deploy_staging"
+            },
+            "dependentTasks": [
+              "register"
+            ]
+          }
+        }
+      }
+    },
+    "components": {
+      "comp-ingest": {
+        "executorLabel": "exec-ingest",
+        "inputDefinitions": {},
+        "outputDefinitions": {
+          "artifacts": {
+            "raw_data": {
+              "artifactType": {
+                "schemaTitle": "system.Artifact"
+              }
+            }
+          }
+        }
+      },
+      "comp-validate": {
+        "executorLabel": "exec-validate",
+        "inputDefinitions": {},
+        "outputDefinitions": {
+          "artifacts": {}
+        }
+      },
+      "comp-train": {
+        "executorLabel": "exec-train",
+        "inputDefinitions": {},
+        "outputDefinitions": {
+          "artifacts": {
+            "model": {
+              "artifactType": {
+                "schemaTitle": "system.Artifact"
+              }
+            },
+            "metrics": {
+              "artifactType": {
+                "schemaTitle": "system.Artifact"
+              }
+            }
+          }
+        }
+      },
+      "comp-evaluate": {
+        "executorLabel": "exec-evaluate",
+        "inputDefinitions": {},
+        "outputDefinitions": {
+          "artifacts": {
+            "gate_decision": {
+              "artifactType": {
+                "schemaTitle": "system.Artifact"
+              }
+            }
+          }
+        }
+      },
+      "comp-register": {
+        "executorLabel": "exec-register",
+        "inputDefinitions": {},
+        "outputDefinitions": {
+          "artifacts": {}
+        }
+      },
+      "comp-deploy_staging": {
+        "executorLabel": "exec-deploy_staging",
+        "inputDefinitions": {},
+        "outputDefinitions": {
+          "artifacts": {}
+        }
+      }
+    },
+    "deploymentSpec": {
+      "executors": {
+        "exec-ingest": {
+          "container": {
+            "image": "asia-southeast1-docker.pkg.dev/itcs355-6688093/itcs355/itcs355:${IMAGE_TAG}",
+            "command": [
+              "python",
+              "scripts/make_dataset.py"
+            ],
+            "args": [],
+            "resources": {
+              "machineType": "e2-standard-4",
+              "spot": false
+            }
+          }
+        },
+        "exec-validate": {
+          "container": {
+            "image": "asia-southeast1-docker.pkg.dev/itcs355-6688093/itcs355/itcs355:${IMAGE_TAG}",
+            "command": [
+              "pytest",
+              "-q",
+              "tests/test_data.py"
+            ],
+            "args": [],
+            "resources": {
+              "machineType": "e2-standard-4",
+              "spot": false
+            }
+          }
+        },
+        "exec-train": {
+          "container": {
+            "image": "asia-southeast1-docker.pkg.dev/itcs355-6688093/itcs355/itcs355:${IMAGE_TAG}",
+            "command": [
+              "python",
+              "-m",
+              "src.train",
+              "--metrics-out",
+              "/outputs/metrics.json"
+            ],
+            "args": [],
+            "resources": {
+              "machineType": "${TRAIN_INSTANCE}",
+              "spot": true
+            }
+          }
+        },
+        "exec-evaluate": {
+          "container": {
+            "image": "asia-southeast1-docker.pkg.dev/itcs355-6688093/itcs355/itcs355:${IMAGE_TAG}",
+            "command": [
+              "python",
+              "scripts/evaluation_gate.py",
+              "--metrics",
+              "/outputs/metrics.json"
+            ],
+            "args": [],
+            "resources": {
+              "machineType": "e2-standard-4",
+              "spot": false
+            }
+          }
+        },
+        "exec-register": {
+          "container": {
+            "image": "asia-southeast1-docker.pkg.dev/itcs355-6688093/itcs355/itcs355:${IMAGE_TAG}",
+            "command": [
+              "python",
+              "scripts/register.py"
+            ],
+            "args": [],
+            "resources": {
+              "machineType": "e2-standard-4",
+              "spot": false
+            }
+          }
+        },
+        "exec-deploy_staging": {
+          "container": {
+            "image": "asia-southeast1-docker.pkg.dev/itcs355-6688093/itcs355/itcs355:${IMAGE_TAG}",
+            "command": [
+              "python",
+              "scripts/deploy.py",
+              "--target",
+              "staging"
+            ],
+            "args": [],
+            "resources": {
+              "machineType": "e2-standard-4",
+              "spot": false
+            }
+          }
+        }
+      }
+    },
+    "schemaVersion": "2.1.0",
+    "sdkVersion": "kfp-2.x"
+  },
+  "labels": {
+    "course": "itcs355",
+    "student": "itcs355-6688093",
+    "lab": "5"
+  }
+}

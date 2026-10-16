@@ -46,14 +46,92 @@ def compile_azure(spec: dict[str, Any]):
     raise NotImplementedError("TODO Lab 5: build an azure.ai.ml pipeline job")
 
 
-def compile_gcp(spec: dict[str, Any]):
+def compile_gcp(spec: dict[str, Any]) -> Path:
     """Vertex AI Pipelines.
 
     Kubeflow Pipelines underneath: steps become container components, conditions become
     dsl.If blocks. The compiled artifact is a JSON file you submit, so your build step
     produces a file rather than an object — different from the other two.
     """
-    raise NotImplementedError("TODO Lab 5: compile a KFP pipeline and submit to Vertex")
+    import json
+
+    pipeline_name = spec.get("name", "itcs355-training-pipeline")
+    steps = spec.get("steps", [])
+    tags = spec.get("tags", {})
+
+    tasks = {}
+    components = {}
+    executors = {}
+
+    for step in steps:
+        sname = step["name"]
+        dep = step.get("depends_on", [])
+        cmd = step.get("command", [])
+        img = step.get("image", "itcs355:latest")
+        cond = step.get("condition")
+
+        task_def: dict[str, Any] = {
+            "taskInfo": {"name": sname},
+            "componentRef": {"name": f"comp-{sname}"},
+        }
+        if dep:
+            task_def["dependentTasks"] = dep
+        if cond:
+            task_def["triggerPolicy"] = {
+                "condition": cond,
+                "strategy": "ALL_UPSTREAM_TASKS_COMPLETED",
+            }
+
+        tasks[sname] = task_def
+
+        components[f"comp-{sname}"] = {
+            "executorLabel": f"exec-{sname}",
+            "inputDefinitions": {},
+            "outputDefinitions": {
+                "artifacts": {out: {"artifactType": {"schemaTitle": "system.Artifact"}}
+                              for out in step.get("outputs", [])}
+            },
+        }
+
+        executors[f"exec-{sname}"] = {
+            "container": {
+                "image": img,
+                "command": cmd,
+                "args": [],
+                "resources": {
+                    "machineType": step.get("instance", "e2-standard-4"),
+                    "spot": step.get("spot", False),
+                },
+            }
+        }
+
+    kfp_spec = {
+        "pipelineSpec": {
+            "pipelineInfo": {
+                "name": pipeline_name,
+                "description": f"ITCS355 Lab 5 Pipeline for {pipeline_name}",
+            },
+            "root": {
+                "dag": {
+                    "tasks": tasks,
+                }
+            },
+            "components": components,
+            "deploymentSpec": {
+                "executors": executors,
+            },
+            "schemaVersion": "2.1.0",
+            "sdkVersion": "kfp-2.x",
+        },
+        "labels": {
+            k: str(v).lower() for k, v in tags.items() if str(v).strip()
+        },
+    }
+
+    out_path = SPEC.parent / "pipeline.json"
+    out_path.write_text(json.dumps(kfp_spec, indent=2))
+    print(f"Compiled Vertex AI pipeline to {out_path} ({len(steps)} steps)")
+    return out_path
 
 
 COMPILERS = {"aws": compile_aws, "azure": compile_azure, "gcp": compile_gcp}
